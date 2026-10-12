@@ -6,7 +6,7 @@ import { User } from './entities/user.entity';
 @Injectable()
 export class UserService {
   //vetor testando "banco de dados do prisma"
-
+  //substitui pelo prisma real depois
   private users: User[] = [];
   private idCounter = 1;
 
