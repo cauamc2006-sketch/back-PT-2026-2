@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -10,10 +11,14 @@ export class UserService {
   private users: User[] = [];
   private idCounter = 1;
 
-  create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto) {
+    const salt = await bcrypt.genSalt();
+    const senhaCriptografada = await bcrypt.hash(createUserDto.senha, salt);
+
     const newUser = {
       id: this.idCounter++,
       ...createUserDto,
+      senha: senhaCriptografada,
     };
     this.users.push(newUser);
     return newUser;
