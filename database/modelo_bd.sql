@@ -2,10 +2,10 @@ DROP TABLE IF EXISTS
     tokens_recuperacao_senha,
     comentarios_avaliacoes,
     avaliacoes_produtos,
-    avaliacoes_jogos,
+    avaliacoes_lojas,
     imagens_produto,
     produtos,
-    jogos,
+    lojas,
     categorias,
     usuarios
 CASCADE;
@@ -34,7 +34,7 @@ CREATE TABLE categorias (
         CHECK (categoria_pai_id IS NULL OR categoria_pai_id <> id)
 );
 
-CREATE TABLE jogos (
+CREATE TABLE lojas (
     id             SERIAL PRIMARY KEY,
     usuario_id     INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     nome           VARCHAR(255) NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE jogos (
 
 CREATE TABLE produtos (
     id             SERIAL PRIMARY KEY,
-    jogo_id        INTEGER NOT NULL REFERENCES jogos(id) ON DELETE CASCADE,
+    loja_id        INTEGER NOT NULL REFERENCES lojas(id) ON DELETE CASCADE,
     categoria_id   INTEGER NOT NULL REFERENCES categorias(id),
     nome           VARCHAR(255) NOT NULL,
     descricao      TEXT,
@@ -78,28 +78,28 @@ CREATE TABLE avaliacoes_produtos (
     CONSTRAINT uq_avaliacao_produto UNIQUE (usuario_id, produto_id)
 );
 
-CREATE TABLE avaliacoes_jogos (
+CREATE TABLE avaliacoes_lojas (
     id             SERIAL PRIMARY KEY,
     usuario_id     INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    jogo_id        INTEGER NOT NULL REFERENCES jogos(id) ON DELETE CASCADE,
+    loja_id        INTEGER NOT NULL REFERENCES lojas(id) ON DELETE CASCADE,
     nota           INTEGER NOT NULL CHECK (nota BETWEEN 0 AND 5),
     comentario     TEXT,
     "criadoEm"     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "atualizadoEm" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_avaliacao_jogo UNIQUE (usuario_id, jogo_id)
+    CONSTRAINT uq_avaliacao_loja UNIQUE (usuario_id, loja_id)
 );
 
 CREATE TABLE comentarios_avaliacoes (
     id                     SERIAL PRIMARY KEY,
     usuario_id             INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    avaliacao_jogo_id      INTEGER REFERENCES avaliacoes_jogos(id) ON DELETE CASCADE,
+    avaliacao_loja_id      INTEGER REFERENCES avaliacoes_lojas(id) ON DELETE CASCADE,
     avaliacao_produto_id   INTEGER REFERENCES avaliacoes_produtos(id) ON DELETE CASCADE,
     conteudo               TEXT NOT NULL,
     "criadoEm"             TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "atualizadoEm"         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_comentario_unico CHECK (
-        (avaliacao_jogo_id IS NOT NULL AND avaliacao_produto_id IS NULL) OR
-        (avaliacao_jogo_id IS NULL AND avaliacao_produto_id IS NOT NULL)
+        (avaliacao_loja_id IS NOT NULL AND avaliacao_produto_id IS NULL) OR
+        (avaliacao_loja_id IS NULL AND avaliacao_produto_id IS NOT NULL)
     )
 );
 
@@ -112,20 +112,20 @@ CREATE TABLE tokens_recuperacao_senha (
     "criadoEm" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_jogos_usuario      ON jogos(usuario_id);
-CREATE INDEX idx_produtos_jogo      ON produtos(jogo_id);
+CREATE INDEX idx_lojas_usuario      ON lojas(usuario_id);
+CREATE INDEX idx_produtos_loja      ON produtos(loja_id);
 CREATE INDEX idx_produtos_categoria ON produtos(categoria_id);
 CREATE INDEX idx_imagens_produto    ON imagens_produto(produto_id);
 CREATE INDEX idx_av_produto_usuario ON avaliacoes_produtos(usuario_id);
 CREATE INDEX idx_av_produto_produto ON avaliacoes_produtos(produto_id);
-CREATE INDEX idx_av_jogo_usuario    ON avaliacoes_jogos(usuario_id);
-CREATE INDEX idx_av_jogo_jogo       ON avaliacoes_jogos(jogo_id);
-CREATE INDEX idx_coment_av_jogo     ON comentarios_avaliacoes(avaliacao_jogo_id);
+CREATE INDEX idx_av_loja_usuario    ON avaliacoes_lojas(usuario_id);
+CREATE INDEX idx_av_loja_loja       ON avaliacoes_lojas(loja_id);
+CREATE INDEX idx_coment_av_loja     ON comentarios_avaliacoes(avaliacao_loja_id);
 CREATE INDEX idx_coment_av_produto  ON comentarios_avaliacoes(avaliacao_produto_id);
 CREATE INDEX idx_tokens_usuario     ON tokens_recuperacao_senha(usuario_id);
 CREATE INDEX idx_tokens_token       ON tokens_recuperacao_senha(token);
 CREATE INDEX idx_produtos_nome      ON produtos(nome);
-CREATE INDEX idx_jogos_nome         ON jogos(nome);
+CREATE INDEX idx_lojas_nome         ON lojas(nome);
 CREATE INDEX idx_categorias_slug    ON categorias(slug);
 
 CREATE OR REPLACE FUNCTION set_atualizado_em()
@@ -144,8 +144,8 @@ CREATE TRIGGER trg_categorias_updated
     BEFORE UPDATE ON categorias
     FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
 
-CREATE TRIGGER trg_jogos_updated
-    BEFORE UPDATE ON jogos
+CREATE TRIGGER trg_lojas_updated
+    BEFORE UPDATE ON lojas
     FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
 
 CREATE TRIGGER trg_produtos_updated
@@ -156,8 +156,8 @@ CREATE TRIGGER trg_av_produtos_updated
     BEFORE UPDATE ON avaliacoes_produtos
     FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
 
-CREATE TRIGGER trg_av_jogos_updated
-    BEFORE UPDATE ON avaliacoes_jogos
+CREATE TRIGGER trg_av_lojas_updated
+    BEFORE UPDATE ON avaliacoes_lojas
     FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
 
 CREATE TRIGGER trg_comentarios_updated

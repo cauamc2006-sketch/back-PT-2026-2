@@ -1,51 +1,64 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
-  //vetor testando "banco de dados do prisma"
-  //substitui pelo prisma real depois
-  private users: User[] = [];
-  private idCounter = 1;
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
     const salt = await bcrypt.genSalt();
     const senhaCriptografada = await bcrypt.hash(createUserDto.senha, salt);
 
-    const newUser = {
-      id: this.idCounter++,
-      ...createUserDto,
-      senha: senhaCriptografada,
-    };
-    this.users.push(newUser);
+    const newUser = await this.prisma.usuario.create({
+      data: {
+        username: createUserDto.username,
+        nome: createUserDto.name, // Mapeando 'name' do DTO para 'nome' do banco
+        email: createUserDto.email,
+        senhaHash: senhaCriptografada,
+      },
+    });
     return newUser;
   }
 
-  findAll() {
-    return this.users;
+  async findAll() {
+    return this.prisma.usuario.findMany();
   }
 
-  findOne(id: number) {
-    const user = this.users.find(u => u.id === id);
-    if (!user) throw new NotFoundException('Usuário não encontrado');
+  async findOne(id: number) {
+    const user = await this.prisma.usuario.findUnique({
+      where: { id },
+    });
+    if(!user) throw new NotFoundException('Usuário não encontrado');
     return user;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    const userIndex = this.users.findIndex(u => u.id === id);
-    if(userIndex === -1) throw new NotFoundException('Usuário não encontrado');
-    this.users[userIndex] = { ...this.users[userIndex], ...updateUserDto };
-    return this.users[userIndex];
+  async findByEmail(email: string) {
+    return this.prisma.usuario.findUnique({
+      where: { email },
+    });
   }
 
-  remove(id: number) {
-    const userIndex = this.users.findIndex(u => u.id === id);
-    if(userIndex === -1) throw new NotFoundException('Usuário não encontrado');
 
-    const deletedUser = this.users.splice(userIndex, 1);
-    return deletedUser[0];
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    await this.findOne(id);
+
+    return this.prisma.usuario.update({
+      where: { id },
+      data: {
+        username: updateUserDto.username,
+        nome: updateUserDto.name,
+        email: updateUserDto.email,
+      },
+    });
+  }
+
+  async remove(id: number) {
+    await this.findOne(id);
+    return this.prisma.usuario.delete({
+      where: { id },
+    });
   }
 }

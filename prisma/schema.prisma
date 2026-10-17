@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id              Int      @id @default(autoincrement())
+  username        String   @unique @db.VarChar(50)
+  nome            String   @db.VarChar(255)
+  email           String   @unique @db.VarChar(255)
+  senhaHash       String   @map("senha_hash") @db.VarChar(255)
+  fotoPerfilUrl   String?  @map("foto_perfil_url") @db.VarChar(255)
+  criadoEm        DateTime @default(now()) @map("criadoEm")
+  atualizadoEm    DateTime @default(now()) @updatedAt @map("atualizadoEm")
+
+  lojas            Loja[]
+  avaliacoesProd   AvaliacaoProduto[]
+  avaliacoesLoja   AvaliacaoLoja[]
+  comentarios      ComentarioAvaliacao[]
+  tokensRecuperacao TokenRecuperacao[]
+
+  @@map("usuarios")
+}
+
+model Categoria {
+  id             Int      @id @default(autoincrement())
+  nome           String   @db.VarChar(100)
+  slug           String   @unique @db.VarChar(120)
+  descricao      String?
+  imagemUrl      String?  @map("imagem_url") @db.VarChar(255)
+  categoriaPaiId Int?     @map("categoria_pai_id")
+  criadoEm       DateTime @default(now()) @map("criadoEm")
+  atualizadoEm   DateTime @default(now()) @updatedAt @map("atualizadoEm")
+
+  categoriaPai Categoria?  @relation("HierarquiaCategoria", fields: [categoriaPaiId], references: [id], onDelete: SetNull)
+  subcategorias Categoria[] @relation("HierarquiaCategoria")
+  produtos     Produto[]
+
+  @@map("categorias")
+}
+
+model Loja {
+  id           Int      @id @default(autoincrement())
+  usuarioId    Int      @map("usuario_id")
+  nome         String   @db.VarChar(255)
+  descricao    String?
+  logoUrl      String?  @map("logo_url") @db.VarChar(255)
+  bannerUrl    String?  @map("banner_url") @db.VarChar(255)
+  stickerUrl   String?  @map("sticker_url") @db.VarChar(255)
+  criadoEm     DateTime @default(now()) @map("criadoEm")
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizadoEm")
+
+  usuario        Usuario            @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  produtos       Produto[]
+  avaliacoes     AvaliacaoLoja[]
+
+  @@map("lojas")
+}
+
+model Produto {
+  id           Int      @id @default(autoincrement())
+  lojaId       Int      @map("loja_id")
+  categoriaId  Int      @map("categoria_id")
+  nome         String   @db.VarChar(255)
+  descricao    String?
+  preco        Decimal  @db.Decimal(10, 2)
+  estoque      Int
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now()) @map("criadoEm")
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizadoEm")
+
+  loja            Loja                @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  categoria       Categoria           @relation(fields: [categoriaId], references: [id])
+  imagens         ImagemProduto[]
+  avaliacoes      AvaliacaoProduto[]
+
+  @@map("produtos")
+}
+
+model ImagemProduto {
+  id        Int    @id @default(autoincrement())
+  produtoId Int    @map("produto_id")
+  urlImagem String @map("url_imagem") @db.VarChar(255)
+  ordem     Int
+
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@unique([produtoId, ordem], name: "uq_imagem_ordem")
+  @@map("imagens_produto")
+}
+
+model AvaliacaoProduto {
+  id           Int      @id @default(autoincrement())
+  usuarioId    Int      @map("usuario_id")
+  produtoId    Int      @map("produto_id")
+  nota         Int
+  comentario   String?
+  criadoEm     DateTime @default(now()) @map("criadoEm")
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizadoEm")
+
+  usuario    Usuario               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  produto    Produto               @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  comentarios ComentarioAvaliacao[]
+
+  @@unique([usuarioId, produtoId], name: "uq_avaliacao_produto")
+  @@map("avaliacoes_produtos")
+}
+
+model AvaliacaoLoja {
+  id           Int      @id @default(autoincrement())
+  usuarioId    Int      @map("usuario_id")
+  lojaId       Int      @map("loja_id")
+  nota         Int
+  comentario   String?
+  criadoEm     DateTime @default(now()) @map("criadoEm")
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizadoEm")
+
+  usuario    Usuario               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  loja       Loja                  @relation(fields: [lojaId], references: [id], onDelete: Cascade)
+  comentarios ComentarioAvaliacao[]
+
+  @@unique([usuarioId, lojaId], name: "uq_avaliacao_loja")
+  @@map("avaliacoes_lojas")
+}
+
+model ComentarioAvaliacao {
+  id                 Int      @id @default(autoincrement())
+  usuarioId          Int      @map("usuario_id")
+  avaliacaoLojaId    Int?     @map("avaliacao_loja_id")
+  avaliacaoProdutoId Int?     @map("avaliacao_produto_id")
+  conteudo           String
+  criadoEm           DateTime @default(now()) @map("criadoEm")
+  atualizadoEm       DateTime @default(now()) @updatedAt @map("atualizadoEm")
+
+  usuario          Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  avaliacaoLoja    AvaliacaoLoja?    @relation(fields: [avaliacaoLojaId], references: [id], onDelete: Cascade)
+  avaliacaoProduto AvaliacaoProduto? @relation(fields: [avaliacaoProdutoId], references: [id], onDelete: Cascade)
+
+  @@map("comentarios_avaliacoes")
+}
+
+model TokenRecuperacao {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("usuario_id")
+  token     String   @unique @db.VarChar(255)
+  expiraEm  DateTime @map("expira_em")
+  usado     Boolean  @default(false)
+  criadoEm  DateTime @default(now()) @map("criadoEm")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("tokens_recuperacao_senha")
+}

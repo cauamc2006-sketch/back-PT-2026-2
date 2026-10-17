@@ -7,13 +7,12 @@ export class AuthService {
     constructor(private readonly userService: UserService) {}
 
     async validarLogin(email: string, senhaPlana: string) {
-        const users = this.userService.findAll();
-        const user = users.find(u => u.email === email);
+        const user = await this.userService.findByEmail(email);
         if(!user) {
             throw new UnauthorizedException('Email ou senha inválidos');
         }
         
-        const senhaValida = await bcrypt.compare(senhaPlana, user.senha);
+        const senhaValida = await bcrypt.compare(senhaPlana, user.senhaHash);
         if(!senhaValida){
             throw new UnauthorizedException('Email ou senha inválidos');
         }
