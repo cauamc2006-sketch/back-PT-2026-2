@@ -20,11 +20,16 @@ export class UserService {
         senhaHash: senhaCriptografada,
       },
     });
-    return newUser;
+    const { senhaHash, ...usuarioSemSenha } = newUser;
+    return usuarioSemSenha;
   }
 
   async findAll() {
-    return this.prisma.usuario.findMany();
+    const users = await this.prisma.usuario.findMany();
+    return users.map(user => {
+      const { senhaHash, ...usuarioSemSenha } = user;
+      return usuarioSemSenha;
+    });
   }
 
   async findOne(id: number) {
@@ -32,7 +37,9 @@ export class UserService {
       where: { id },
     });
     if(!user) throw new NotFoundException('Usuário não encontrado');
-    return user;
+    
+    const { senhaHash, ...usuarioSemSenha } = user;
+    return usuarioSemSenha;
   }
 
   async findByEmail(email: string) {
@@ -45,14 +52,26 @@ export class UserService {
   async update(id: number, updateUserDto: UpdateUserDto) {
     await this.findOne(id);
 
-    return this.prisma.usuario.update({
-      where: { id },
-      data: {
-        username: updateUserDto.username,
+    const dadosParaAtualizar: any = {
+      username: updateUserDto.username,
         nome: updateUserDto.name,
         email: updateUserDto.email,
-      },
+    };
+
+    if (updateUserDto.senha) {
+      const salt = await bcrypt.genSalt()
+      dadosParaAtualizar.senhaHash = await bcrypt.hash(updateUserDto.senha, salt);
+    }
+    const usuarioAtualizado = await this.prisma.usuario.update({
+      where: { id },
+      data: dadosParaAtualizar,
     });
+
+// coloca a senhaHash em uma variável e guarda o resto no "usuarioSemSenha"
+    const { senhaHash, ...usuarioSemSenha } = usuarioAtualizado;
+
+    // retorna o objeto limpo
+    return usuarioSemSenha;
   }
 
   async remove(id: number) {
