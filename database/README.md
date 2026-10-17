@@ -8,11 +8,11 @@ Modelagem do banco em PostgreSQL.
 |---|---|
 | usuarios | Cadastro, login e perfil |
 | categorias | Categorias com hierarquia pai/filho |
-| jogos | Lojas do sistema |
+| lojas | Lojas do sistema |
 | produtos | Itens das lojas |
 | imagens_produto | Galeria de imagens |
 | avaliacoes_produtos | Avaliações de produtos |
-| avaliacoes_jogos | Avaliações de lojas |
+| avaliacoes_lojas | Avaliações de lojas |
 | comentarios_avaliacoes | Comentários em avaliações |
 | tokens_recuperacao_senha | Tokens para recuperação de senha |
 

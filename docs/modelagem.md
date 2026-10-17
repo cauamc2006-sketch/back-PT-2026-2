@@ -7,13 +7,13 @@ produtos, avaliações e comentários.
 
 ## Relacionamentos principais
 
-- usuarios 1 ── N jogos
-- jogos 1 ── N produtos
+- usuarios 1 ── N lojas
+- lojas 1 ── N produtos
 - categorias 1 ── N produtos
 - categorias 1 ── N categorias (hierarquia)
 - produtos 1 ── N imagens_produto
 - usuarios 1 ── N avaliacoes_produtos
-- usuarios 1 ── N avaliacoes_jogos
+- usuarios 1 ── N avaliacoes_lojas
 - comentarios_avaliacoes → pertence a UMA avaliação (loja OU produto)
 
 ## Dicionário de dados
@@ -41,7 +41,7 @@ produtos, avaliações e comentários.
 | categoria_pai_id | INTEGER | FK → categorias, SET NULL |
 | criadoEm, atualizadoEm | TIMESTAMP | Auto |
 
-### jogos
+### lojas
 | Coluna | Tipo | Regra |
 |---|---|---|
 | id | SERIAL | PK |
@@ -55,7 +55,7 @@ produtos, avaliações e comentários.
 | Coluna | Tipo | Regra |
 |---|---|---|
 | id | SERIAL | PK |
-| jogo_id | INTEGER | FK → jogos, CASCADE |
+| loja_id | INTEGER | FK → lojas, CASCADE |
 | categoria_id | INTEGER | FK → categorias |
 | nome | VARCHAR(255) | Obrigatório |
 | descricao | TEXT | Opcional |
@@ -83,12 +83,12 @@ produtos, avaliações e comentários.
 | criadoEm, atualizadoEm | TIMESTAMP | Auto |
 | Único | — | 1 avaliação por usuário/produto |
 
-### avaliacoes_jogos
+### avaliacoes_lojas
 | Coluna | Tipo | Regra |
 |---|---|---|
 | id | SERIAL | PK |
 | usuario_id | INTEGER | FK → usuarios, CASCADE |
-| jogo_id | INTEGER | FK → jogos, CASCADE |
+| loja_id | INTEGER | FK → lojas, CASCADE |
 | nota | INTEGER | Entre 0 e 5 |
 | comentario | TEXT | Opcional |
 | criadoEm, atualizadoEm | TIMESTAMP | Auto |
@@ -99,7 +99,7 @@ produtos, avaliações e comentários.
 |---|---|---|
 | id | SERIAL | PK |
 | usuario_id | INTEGER | FK → usuarios, CASCADE |
-| avaliacao_jogo_id | INTEGER | FK, opcional |
+| avaliacao_loja_id | INTEGER | FK, opcional |
 | avaliacao_produto_id | INTEGER | FK, opcional |
 | conteudo | TEXT | Obrigatório |
 | criadoEm, atualizadoEm | TIMESTAMP | Auto |
