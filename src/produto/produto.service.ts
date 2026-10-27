@@ -3,13 +3,13 @@ import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
 
 @Injectable()
-export class ProdutosService {
+export class ProdutoService {
   create(createProdutoDto: CreateProdutoDto) {
     return 'This action adds a new produto';
   }
 
   findAll() {
-    return `This action returns all produtos`;
+    return `This action returns all produto`;
   }
 
   findOne(id: number) {

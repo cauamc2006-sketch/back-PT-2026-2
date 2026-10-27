@@ -5,9 +5,10 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProdutosModule } from './produtos/produtos.module';
+import { ProdutoModule } from './produto/produto.module';
 
 @Module({
-  imports: [UserModule, AuthModule, PrismaModule, ProdutosModule],
+  imports: [UserModule, AuthModule, PrismaModule, ProdutosModule, ProdutoModule],
   controllers: [AppController],
   providers: [AppService],
 })
