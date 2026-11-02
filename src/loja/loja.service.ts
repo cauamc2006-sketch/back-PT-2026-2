@@ -1,28 +1,50 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateLojaDto } from './dto/create-loja.dto';
 import { UpdateLojaDto } from './dto/update-loja.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class LojaService {
-  constructor(private readonly lojaService: LojaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  create(createLojaDto: CreateLojaDto) {
-    return 'This action adds a new loja';
+  async create(createLojaDto: CreateLojaDto, usuarioId: number) {
+    return await this.prisma.loja.create({
+      data: {...createLojaDto, usuarioId }, 
+    });
   }
 
-  findAll() {
-    return `This action returns all loja`;
+  async findAll() {
+    return await this.prisma.loja.findMany();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} loja`;
+  async findOne(id: number) {
+    const loja = await this.prisma.loja.findUnique({
+      where: { id },
+    });
+    if (!loja) {
+      throw new NotFoundException(`Loja não encontrada`);
+    }
+    return loja;
   }
 
-  update(id: number, updateLojaDto: UpdateLojaDto) {
-    return `This action updates a #${id} loja`;
+  async update(id: number, updateLojaDto: UpdateLojaDto, usuarioId: number) {
+    const loja = await this.findOne(id);
+    if (loja.usuarioId !== usuarioId) {
+      throw new ForbiddenException('Você não tem permissão para alterar esta loja');
+    }
+    return await this.prisma.loja.update({
+      where: { id },
+      data: updateLojaDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} loja`;
+  async remove(id: number, usuarioId: number) {
+    const loja = await this.findOne(id);
+    if (loja.usuarioId !== usuarioId) {
+      throw new ForbiddenException('Você não tem permissão para alterar esta loja');
+    }
+    return await this.prisma.loja.delete({
+      where: { id },
+    });
   }
 }

@@ -2,7 +2,7 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateLojaDto {
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'O nome da loja não pode estar vazio' })
   nome: string;
 
   @IsString()
