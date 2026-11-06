@@ -8,6 +8,10 @@ import { ComentariosModule } from './comentarios/comentarios.module';
 
 @Module({
   imports: [UserModule, AuthModule, PrismaModule, ComentariosModule],
+import { ProdutoModule } from './produto/produto.module';
+
+@Module({
+  imports: [UserModule, AuthModule, PrismaModule, ProdutoModule],
   controllers: [AppController],
   providers: [AppService],
 })
