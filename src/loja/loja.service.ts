@@ -9,7 +9,14 @@ export class LojaService {
 
   async create(createLojaDto: CreateLojaDto, usuarioId: number) {
     return await this.prisma.loja.create({
-      data: {...createLojaDto, usuarioId }, 
+      data: {
+        nome: createLojaDto.nome,
+        descricao: createLojaDto.descricao,
+        logoUrl: createLojaDto.logoUrl,
+        bannerUrl: createLojaDto.bannerUrl,
+        stickerUrl: createLojaDto.stickerUrl,
+        usuarioId,
+      },
     });
   }
 
