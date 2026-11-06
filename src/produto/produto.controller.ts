@@ -1,34 +1,34 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { ProdutoService } from './produto.service';
-import { CreateProdutoDto } from './dto/create-produto.dto';
-import { UpdateProdutoDto } from './dto/update-produto.dto';
+import type { produtodto } from './produto.dto';
+
 
 @Controller('produto')
 export class ProdutoController {
   constructor(private readonly produtoService: ProdutoService) {}
 
   @Post()
-  create(@Body() createProdutoDto: CreateProdutoDto) {
-    return this.produtoService.create(createProdutoDto);
+  create(@Body() data: produtodto) {
+    return this.produtoService.create(data);
   }
 
   @Get()
-  findAll() {
+  async findAll() {
     return this.produtoService.findAll();
   }
-
+ 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.produtoService.findOne(+id);
+  async findOne(@Param('id') id: number) {
+    return this.produtoService.findOne(Number(id));
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProdutoDto: UpdateProdutoDto) {
-    return this.produtoService.update(+id, updateProdutoDto);
+   async update(@Param('id') id: string, @Body() data: produtodto) {
+    return this.produtoService.update(Number(id), data);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.produtoService.remove(+id);
+  remove(@Param('id') id: number) {
+    return this.produtoService.delete(Number(id));
   }
 }
