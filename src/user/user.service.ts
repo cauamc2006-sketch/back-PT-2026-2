@@ -20,14 +20,14 @@ export class UserService {
         senhaHash: senhaCriptografada,
       },
     });
-    const { senhaHash, ...usuarioSemSenha } = newUser;
+    const { senhaHash: _senhaHash, ...usuarioSemSenha } = newUser;
     return usuarioSemSenha;
   }
 
   async findAll() {
     const users = await this.prisma.usuario.findMany();
     return users.map(user => {
-      const { senhaHash, ...usuarioSemSenha } = user;
+      const { senhaHash: _senhaHash, ...usuarioSemSenha } = user;
       return usuarioSemSenha;
     });
   }
@@ -38,7 +38,7 @@ export class UserService {
     });
     if(!user) throw new NotFoundException('Usuário não encontrado');
     
-    const { senhaHash, ...usuarioSemSenha } = user;
+    const { senhaHash: _senhaHash, ...usuarioSemSenha } = user;
     return usuarioSemSenha;
   }
 
@@ -68,7 +68,7 @@ export class UserService {
     });
 
 // coloca a senhaHash em uma variável e guarda o resto no "usuarioSemSenha"
-    const { senhaHash, ...usuarioSemSenha } = usuarioAtualizado;
+    const { senhaHash: _senhaHash, ...usuarioSemSenha } = usuarioAtualizado;
 
     // retorna o objeto limpo
     return usuarioSemSenha;
