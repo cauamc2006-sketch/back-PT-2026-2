@@ -5,9 +5,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { LojaModule } from './loja/loja.module';
-
 import { ComentariosModule } from './comentarios/comentarios.module';
-
 import { ProdutoModule } from './produto/produto.module';
 
 @Module({
