@@ -7,10 +7,11 @@ import { PrismaModule } from './prisma/prisma.module';
 import { LojaModule } from './loja/loja.module';
 import { ComentariosModule } from './comentarios/comentarios.module';
 import { ProdutoModule } from './produto/produto.module';
+import { AvaliacaoProdutoModule } from './avaliacao-produto/avaliacao-produto.module';
 
 @Module({
-  imports: [UserModule, AuthModule, PrismaModule, LojaModule, ComentariosModule, ProdutoModule],
+  imports: [UserModule, AuthModule, PrismaModule, ProdutoModule, LojaModule, ComentariosModule, AvaliacaoProdutoModule],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {} 
