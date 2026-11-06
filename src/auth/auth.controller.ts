@@ -1,12 +1,13 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService){}
+  constructor(private readonly authService: AuthService) {}
 
-    @Post('login')
-    login(@Body() body: any) {
-        return this.authService.validarLogin(body.email, body.senha);
-    }
+  @Post('login')
+  login(@Body() loginDto: LoginDto) {
+    return this.authService.validarLogin(loginDto.email, loginDto.senha);
+  }
 }
