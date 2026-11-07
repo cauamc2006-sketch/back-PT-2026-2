@@ -10,7 +10,7 @@ import { ProdutoModule } from './produto/produto.module';
 import { CategoriasModule } from './categorias/categorias.module';
 
 @Module({
-  imports: [UserModule, AuthModule, PrismaModule, ProdutoModule, LojaModule, ComentariosModule, CategoriasModule],
+  imports: [UserModule, AuthModule, PrismaModule, LojaModule, ComentariosModule, ProdutoModule, CategoriasModule],
   controllers: [AppController],
   providers: [AppService],
 })
