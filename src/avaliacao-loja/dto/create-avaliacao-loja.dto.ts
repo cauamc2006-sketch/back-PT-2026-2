@@ -5,16 +5,11 @@ export class CreateAvaliacaoLojaDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  usuarioId: number;
-
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
   lojaId: number;
 
   @Type(() => Number)
   @IsInt()
-  @Min(0)
+  @Min(1)
   @Max(5)
   nota: number;
 
