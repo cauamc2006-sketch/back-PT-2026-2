@@ -28,8 +28,10 @@ export class LojaService {
     const loja = await this.prisma.loja.findUnique({
       where: { id },
       include: {
-        usuario: true,
-      }
+        usuario: {
+          select: { id: true, nome: true, username: true, fotoPerfilUrl: true },
+        },
+      },
     });
     if (!loja) {
       throw new NotFoundException(`Loja não encontrada`);

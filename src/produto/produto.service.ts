@@ -51,8 +51,9 @@ export class ProdutoService {
     }
   }
 
-  async findAll() {
+  async findAll(lojaId?: number) {
     return this.prisma.produto.findMany({
+      where: lojaId !== undefined ? { lojaId } : undefined,
       include: { loja: true, categoria: true, imagens: true },
       orderBy: { id: 'desc' },
     });
