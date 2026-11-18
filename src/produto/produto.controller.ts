@@ -1,4 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { join } from 'path';
 import { ProdutoService } from './produto.service';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
@@ -7,9 +25,30 @@ import { UpdateProdutoDto } from './dto/update-produto.dto';
 export class ProdutoController {
   constructor(private readonly produtoService: ProdutoService) {}
 
+  @UseGuards(AuthGuard('jwt'))
+  @Post('upload')
+  @UseInterceptors(
+    FilesInterceptor('files', 4, {
+      dest: join(process.cwd(), 'uploads'),
+    }),
+  )
+  uploadImagens(
+    @UploadedFiles() files: Array<{ filename: string; originalname: string }>,
+    @Req() req: { protocol: string; get: (name: string) => string | undefined },
+  ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Nenhuma imagem enviada.');
+    }
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    return {
+      urls: files.map((file) => `${baseUrl}/uploads/${file.filename}`),
+    };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Body() dto: CreateProdutoDto) {
-    return this.produtoService.create(dto);
+  create(@Body() dto: CreateProdutoDto, @Req() req: { user: { userId: number } }) {
+    return this.produtoService.create(dto, req.user.userId);
   }
 
   @Get()
@@ -22,11 +61,13 @@ export class ProdutoController {
     return this.produtoService.findOne(id);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProdutoDto) {
     return this.produtoService.update(id, dto);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.produtoService.remove(id);

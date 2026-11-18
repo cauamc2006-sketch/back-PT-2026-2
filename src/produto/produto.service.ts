@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProdutoDto } from './dto/create-produto.dto';
@@ -31,8 +31,12 @@ export class ProdutoService {
     throw error;
   }
 
-  async create(dto: CreateProdutoDto) {
+  async create(dto: CreateProdutoDto, usuarioId: number) {
     await this.validarRelacionamentos(dto.lojaId, dto.categoriaId);
+    const loja = await this.prisma.loja.findUnique({ where: { id: dto.lojaId } });
+    if (loja && loja.usuarioId !== usuarioId) {
+      throw new ForbiddenException('Você não tem permissão para adicionar produtos nesta loja.');
+    }
     try {
       return await this.prisma.produto.create({
         data: {
@@ -43,6 +47,16 @@ export class ProdutoService {
           preco: dto.preco,
           estoque: dto.estoque,
           ativo: dto.ativo ?? true,
+          ...(dto.imagens?.length
+            ? {
+                imagens: {
+                  create: dto.imagens.map((urlImagem, index) => ({
+                    urlImagem,
+                    ordem: index + 1,
+                  })),
+                },
+              }
+            : {}),
         },
         include: { loja: true, categoria: true, imagens: true },
       });
