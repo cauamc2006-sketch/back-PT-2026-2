@@ -1,12 +1,57 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { renameSync } from 'fs';
+import { extname, join } from 'path';
 import { LojaService } from './loja.service';
 import { CreateLojaDto } from './dto/create-loja.dto';
 import { UpdateLojaDto } from './dto/update-loja.dto';
 
+const uploadsDir = join(process.cwd(), 'uploads');
+
 @Controller('loja')
 export class LojaController {
   constructor(private readonly lojaService: LojaService) {}
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('upload')
+  @UseInterceptors(
+    FilesInterceptor('files', 3, {
+      dest: uploadsDir,
+    }),
+  )
+  uploadImagens(
+    @UploadedFiles() files: Array<{ filename: string; originalname: string }>,
+    @Req() req: { protocol: string; get: (name: string) => string | undefined },
+  ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Nenhuma imagem enviada.');
+    }
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    return {
+      urls: files.map((file) => {
+        const ext = extname(file.originalname);
+        const filenameComExtensao = `${file.filename}${ext}`;
+        if (ext) {
+          renameSync(join(uploadsDir, file.filename), join(uploadsDir, filenameComExtensao));
+        }
+        return `${baseUrl}/uploads/${filenameComExtensao}`;
+      }),
+    };
+  }
 
   @UseGuards(AuthGuard('jwt'))
   @Post()

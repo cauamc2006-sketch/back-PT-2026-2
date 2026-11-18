@@ -16,7 +16,10 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { join } from 'path';
+import { renameSync } from 'fs';
+import { extname, join } from 'path';
+
+const uploadsDir = join(process.cwd(), 'uploads');
 import { ProdutoService } from './produto.service';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
@@ -29,7 +32,7 @@ export class ProdutoController {
   @Post('upload')
   @UseInterceptors(
     FilesInterceptor('files', 4, {
-      dest: join(process.cwd(), 'uploads'),
+      dest: uploadsDir,
     }),
   )
   uploadImagens(
@@ -41,7 +44,14 @@ export class ProdutoController {
     }
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     return {
-      urls: files.map((file) => `${baseUrl}/uploads/${file.filename}`),
+      urls: files.map((file) => {
+        const ext = extname(file.originalname);
+        const filenameComExtensao = `${file.filename}${ext}`;
+        if (ext) {
+          renameSync(join(uploadsDir, file.filename), join(uploadsDir, filenameComExtensao));
+        }
+        return `${baseUrl}/uploads/${filenameComExtensao}`;
+      }),
     };
   }
 
