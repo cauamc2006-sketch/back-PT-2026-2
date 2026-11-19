@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -42,6 +43,30 @@ export class UserService {
     return usuarioSemSenha;
   }
 
+  async findProfile(id: number) {
+    const user = await this.prisma.usuario.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        username: true,
+        nome: true,
+        email: true,
+        fotoPerfilUrl: true,
+        lojas: {
+          orderBy: { criadoEm: 'desc' },
+          include: {
+            produtos: {
+              orderBy: { criadoEm: 'desc' },
+              include: { imagens: { orderBy: { ordem: 'asc' } } },
+            },
+          },
+        },
+      },
+    });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    return user;
+  }
+
   async findByEmail(email: string) {
     return this.prisma.usuario.findUnique({
       where: { email },
@@ -62,16 +87,33 @@ export class UserService {
       const salt = await bcrypt.genSalt()
       dadosParaAtualizar.senhaHash = await bcrypt.hash(updateUserDto.senha, salt);
     }
-    const usuarioAtualizado = await this.prisma.usuario.update({
-      where: { id },
-      data: dadosParaAtualizar,
-    });
+    try {
+      await this.prisma.usuario.update({ where: { id }, data: dadosParaAtualizar });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Username ou e-mail já está em uso');
+      }
+      throw error;
+    }
 
-// coloca a senhaHash em uma variável e guarda o resto no "usuarioSemSenha"
-    const { senhaHash: _senhaHash, ...usuarioSemSenha } = usuarioAtualizado;
+    return this.findProfile(id);
+  }
 
-    // retorna o objeto limpo
-    return usuarioSemSenha;
+  async changePassword(id: number, senhaAtual: string, novaSenha: string) {
+    if (!senhaAtual || !novaSenha || novaSenha.length < 8) {
+      throw new BadRequestException('A senha nova deve ter no mínimo 8 caracteres');
+    }
+    const user = await this.prisma.usuario.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    if (!(await bcrypt.compare(senhaAtual, user.senhaHash))) {
+      throw new UnauthorizedException('A senha atual está incorreta');
+    }
+    if (await bcrypt.compare(novaSenha, user.senhaHash)) {
+      throw new BadRequestException('A senha nova deve ser diferente da atual');
+    }
+    const senhaHash = await bcrypt.hash(novaSenha, await bcrypt.genSalt());
+    await this.prisma.usuario.update({ where: { id }, data: { senhaHash } });
+    return { mensagem: 'Senha alterada com sucesso' };
   }
 
   async remove(id: number) {
