@@ -43,14 +43,14 @@ export class UserService {
     return usuarioSemSenha;
   }
 
-  async findProfile(id: number) {
+  async findProfile(id: number, includeEmail = true) {
     const user = await this.prisma.usuario.findUnique({
       where: { id },
       select: {
         id: true,
         username: true,
         nome: true,
-        email: true,
+        ...(includeEmail ? { email: true } : {}),
         fotoPerfilUrl: true,
         lojas: {
           orderBy: { criadoEm: 'desc' },
@@ -65,6 +65,10 @@ export class UserService {
     });
     if (!user) throw new NotFoundException('Usuário não encontrado');
     return user;
+  }
+
+  async findPublicProfile(id: number) {
+    return this.findProfile(id, false);
   }
 
   async findByEmail(email: string) {

@@ -26,6 +26,11 @@ export class UserController {
     return this.userService.findProfile(req.user.userId);
   }
 
+  @Get(':id/profile')
+  findPublicProfile(@Param('id') id: string) {
+    return this.userService.findPublicProfile(+id);
+  }
+
   @UseGuards(AuthGuard('jwt'))
   @Patch('me/password')
   changePassword(@Body() dto: ChangePasswordDto, @Req() req: any) {
