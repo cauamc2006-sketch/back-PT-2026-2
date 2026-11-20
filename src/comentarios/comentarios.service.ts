@@ -38,12 +38,15 @@ export class ComentariosService {
 
     return this.prisma.comentarioAvaliacao.create({
       data: { conteudo, usuarioId, avaliacaoLojaId, avaliacaoProdutoId },
+      include: { usuario: { select: { id: true, nome: true, username: true, fotoPerfilUrl: true } } },
     });
   }
 
   findAll(avaliacaoLojaId?: number, avaliacaoProdutoId?: number) {
     return this.prisma.comentarioAvaliacao.findMany({
       where: { avaliacaoLojaId, avaliacaoProdutoId },
+      orderBy: { criadoEm: 'desc' },
+      include: { usuario: { select: { id: true, nome: true, username: true, fotoPerfilUrl: true } } },
     });
   }
 
@@ -63,6 +66,7 @@ export class ComentariosService {
     return this.prisma.comentarioAvaliacao.update({
       where: { id },
       data: { conteudo: dto.conteudo },
+      include: { usuario: { select: { id: true, nome: true, username: true, fotoPerfilUrl: true } } },
     });
   }
 

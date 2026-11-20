@@ -31,6 +31,18 @@ export class ProdutoService {
     throw error;
   }
 
+  private async assertOwner(produtoId: number, usuarioId: number) {
+    const produto = await this.prisma.produto.findUnique({
+      where: { id: produtoId },
+      include: { loja: true },
+    });
+    if (!produto) throw new NotFoundException(`Produto com ID ${produtoId} não encontrado.`);
+    if (produto.loja.usuarioId !== usuarioId) {
+      throw new ForbiddenException('Você não tem permissão para alterar este produto.');
+    }
+    return produto;
+  }
+
   async create(dto: CreateProdutoDto, usuarioId: number) {
     await this.validarRelacionamentos(dto.lojaId, dto.categoriaId);
     const loja = await this.prisma.loja.findUnique({ where: { id: dto.lojaId } });
@@ -83,9 +95,13 @@ export class ProdutoService {
     return produto;
   }
 
-  async update(id: number, dto: UpdateProdutoDto) {
-    await this.findOne(id);
+  async update(id: number, dto: UpdateProdutoDto, usuarioId: number) {
+    await this.assertOwner(id, usuarioId);
     await this.validarRelacionamentos(dto.lojaId, dto.categoriaId);
+    if (dto.lojaId !== undefined) {
+      const loja = await this.prisma.loja.findUnique({ where: { id: dto.lojaId } });
+      if (loja?.usuarioId !== usuarioId) throw new ForbiddenException('Você não tem permissão para mover o produto para esta loja.');
+    }
     try {
       return await this.prisma.produto.update({
         where: { id },
@@ -105,12 +121,63 @@ export class ProdutoService {
     }
   }
 
-  async remove(id: number) {
-    await this.findOne(id);
+  async remove(id: number, usuarioId: number) {
+    await this.assertOwner(id, usuarioId);
     try {
       return await this.prisma.produto.delete({ where: { id } });
     } catch (error) {
       this.tratarErro(error);
     }
+  }
+
+  async findImages(produtoId: number) {
+    await this.findOne(produtoId);
+    return this.prisma.imagemProduto.findMany({ where: { produtoId }, orderBy: { ordem: 'asc' } });
+  }
+
+  async addImages(produtoId: number, urls: string[], usuarioId: number) {
+    await this.assertOwner(produtoId, usuarioId);
+    const existentes = await this.prisma.imagemProduto.findMany({ where: { produtoId } });
+    if (existentes.length + urls.length > 4) throw new BadRequestException('Cada produto pode ter no máximo 4 imagens.');
+    const inicio = existentes.reduce((maior, imagem) => Math.max(maior, imagem.ordem), 0);
+    await this.prisma.$transaction(urls.map((urlImagem, index) => this.prisma.imagemProduto.create({
+      data: { produtoId, urlImagem, ordem: inicio + index + 1 },
+    })));
+    return this.findImages(produtoId);
+  }
+
+  async updateImage(produtoId: number, imagemId: number, urlImagem: string, usuarioId: number) {
+    await this.assertOwner(produtoId, usuarioId);
+    const imagem = await this.prisma.imagemProduto.findFirst({ where: { id: imagemId, produtoId } });
+    if (!imagem) throw new NotFoundException('Imagem do produto não encontrada.');
+    return this.prisma.imagemProduto.update({ where: { id: imagemId }, data: { urlImagem } });
+  }
+
+  async reorderImages(produtoId: number, imagens: Array<{ id: number; ordem: number }>, usuarioId: number) {
+    await this.assertOwner(produtoId, usuarioId);
+    const existentes = await this.prisma.imagemProduto.findMany({ where: { produtoId } });
+    const ids = new Set(existentes.map((imagem) => imagem.id));
+    if (imagens.length !== existentes.length || imagens.some((imagem) => !ids.has(imagem.id)) || new Set(imagens.map((imagem) => imagem.ordem)).size !== imagens.length) {
+      throw new BadRequestException('Informe todas as imagens do produto com ordens únicas.');
+    }
+    await this.prisma.$transaction(async (tx) => {
+      for (const [index, imagem] of imagens.entries()) {
+        await tx.imagemProduto.update({ where: { id: imagem.id }, data: { ordem: -(index + 1) } });
+      }
+      for (const imagem of imagens) {
+        await tx.imagemProduto.update({ where: { id: imagem.id }, data: { ordem: imagem.ordem } });
+      }
+    });
+    return this.findImages(produtoId);
+  }
+
+  async removeImage(produtoId: number, imagemId: number, usuarioId: number) {
+    await this.assertOwner(produtoId, usuarioId);
+    const imagem = await this.prisma.imagemProduto.findFirst({ where: { id: imagemId, produtoId } });
+    if (!imagem) throw new NotFoundException('Imagem do produto não encontrada.');
+    await this.prisma.imagemProduto.delete({ where: { id: imagemId } });
+    const restantes = await this.prisma.imagemProduto.findMany({ where: { produtoId }, orderBy: { ordem: 'asc' } });
+    await this.prisma.$transaction(restantes.map((item, index) => this.prisma.imagemProduto.update({ where: { id: item.id }, data: { ordem: index + 1 } })));
+    return this.findImages(produtoId);
   }
 }

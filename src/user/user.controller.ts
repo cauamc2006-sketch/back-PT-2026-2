@@ -3,6 +3,7 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('user')
 export class UserController {
@@ -20,8 +21,23 @@ export class UserController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Get('me/profile')
+  findCurrent(@Req() req: any) {
+    return this.userService.findProfile(req.user.userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('me/password')
+  changePassword(@Body() dto: ChangePasswordDto, @Req() req: any) {
+    return this.userService.changePassword(req.user.userId, dto.senhaAtual, dto.novaSenha);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string, @Req() req: any) {
+    if (req.user.userId !== +id) {
+      throw new ForbiddenException('Não tem permissão para consultar a conta de outro usuário');
+    }
     return this.userService.findOne(+id);
   }
   
