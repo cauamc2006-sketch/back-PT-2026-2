@@ -9,7 +9,7 @@ export class CreateAvaliacaoLojaDto {
 
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(0)
   @Max(5)
   nota: number;
 
